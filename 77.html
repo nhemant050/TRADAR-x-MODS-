@@ -1,0 +1,322 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TRADAR x MODS - PREMIUM</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: radial-gradient(circle at center, #0f001f, #0a0010 100%);
+      font-family: 'Orbitron', sans-serif;
+      overflow: hidden;
+      color: #ffffff;
+    }
+
+    #particles-js {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    .scanlines::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(255,255,255,0.03),
+        rgba(255,255,255,0.03) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 40px 30px;
+      backdrop-filter: blur(15px);
+      box-shadow: 0 0 30px #00ffea70;
+      border: 2px solid transparent;
+      position: relative;
+      animation: borderAnimation 4s linear infinite;
+    }
+
+    @keyframes borderAnimation {
+      0% {
+        border-image: linear-gradient(45deg, #00ffea, #ff00ff) 1;
+      }
+      100% {
+        border-image: linear-gradient(135deg, #ff00ff, #00ffea) 1;
+      }
+    }
+
+    .title {
+      font-size: clamp(32px, 6vw, 48px);
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px #00ffea;
+    }
+
+    .clock {
+      font-size: clamp(20px, 4vw, 28px);
+      margin-bottom: 20px;
+      color: #ff00ff;
+    }
+
+    .prediction {
+      font-size: clamp(36px, 8vw, 54px);
+      font-weight: bold;
+      padding: 20px;
+      margin-bottom: 20px;
+      background: linear-gradient(45deg, #00ffea, #ff00ff);
+      color: #000;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(255, 0, 255, 0.6);
+    }
+
+    .telegram-link a {
+      display: inline-block;
+      padding: 12px 30px;
+      background: linear-gradient(45deg, #ff00ff, #00ffea);
+      color: #000;
+      border-radius: 10px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 0 15px #00ffea;
+    }
+
+    .telegram-link a:hover {
+      background: linear-gradient(45deg, #00ffea, #ff00ff);
+      color: #fff;
+      transform: scale(1.05);
+    }
+
+    .server-status {
+      margin-top: 20px;
+      font-size: 16px;
+      color: #00ffea;
+      text-shadow: 0 0 10px #00ffea;
+    }
+
+    #login-box {
+      position: absolute;
+      z-index: 3;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    #login-box input {
+      padding: 12px 20px;
+      font-size: 18px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      width: 80%;
+      max-width: 300px;
+    }
+
+    #login-box button {
+      padding: 12px 25px;
+      background: linear-gradient(45deg, #00ffea, #ff00ff);
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 10px #00ffea;
+    }
+
+    #login-box h2 {
+      margin-bottom: 30px;
+      color: #00ffea;
+    }
+  </style>
+</head>
+<body class="scanlines">
+  <div id="particles-js"></div>
+
+  <!-- Login Box -->
+  <div id="login-box">
+    <h2>Enter Access Key</h2>
+    <input type="password" id="keyInput" placeholder="Access Key" autocomplete="off"/>
+    <button onclick="verifyKey()">Login</button>
+  </div>
+
+  <!-- Main Dashboard -->
+  <div class="container" id="dashboard" style="display:none;">
+    <div class="card">
+      <div class="title">TRADAR x MODS</div>
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="prediction" id="prediction">--</div>
+      <div class="telegram-link">
+        <a href="https://t.me/+kjZNgu1v6isxNjZl" target="_blank" rel="noopener noreferrer">Join Telegram</a>
+      </div>
+      <div class="server-status">Server Status: Connected</div>
+    </div>
+  </div>
+
+  <script>
+    const keys = Array.from({ length: 50 }, (_, i) => ({
+      key: `KEY${String(i + 1).padStart(3, '0')}`,
+      expiryDays: 7
+    }));
+
+    function verifyKey() {
+      const input = document.getElementById("keyInput").value.trim().toUpperCase();
+      if (!input) {
+        alert("Please enter an access key.");
+        return;
+      }
+
+      const storedData = JSON.parse(localStorage.getItem("usedKeys")) || {};
+      const now = Date.now();
+
+      const found = keys.find(k => k.key === input);
+      if (!found) {
+        alert("Invalid Key");
+        return;
+      }
+
+      const existing = storedData[input];
+      if (existing) {
+        if (now > existing.expiresAt) {
+          alert("Key Expired");
+          return;
+        }
+      } else {
+        const expiresAt = now + found.expiryDays * 24 * 60 * 60 * 1000;
+        storedData[input] = { expiresAt };
+        localStorage.setItem("usedKeys", JSON.stringify(storedData));
+      }
+
+      localStorage.setItem("loggedIn", "true");
+      localStorage.setItem("activeKey", input);
+      document.getElementById("login-box").style.display = "none";
+      document.getElementById("dashboard").style.display = "flex";
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const loggedIn = localStorage.getItem("loggedIn") === "true";
+      const activeKey = localStorage.getItem("activeKey");
+      const storedData = JSON.parse(localStorage.getItem("usedKeys")) || {};
+      const now = Date.now();
+
+      if (loggedIn && activeKey && storedData[activeKey] && now <= storedData[activeKey].expiresAt) {
+        document.getElementById("login-box").style.display = "none";
+        document.getElementById("dashboard").style.display = "flex";
+      } else {
+        localStorage.removeItem("loggedIn");
+        localStorage.removeItem("activeKey");
+      }
+
+      function updateClock() {
+        const nowDate = new Date();
+        const h = String(nowDate.getHours()).padStart(2, '0');
+        const m = String(nowDate.getMinutes()).padStart(2, '0');
+        const s = String(nowDate.getSeconds()).padStart(2, '0');
+        document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+      }
+
+      function generateRandomPrediction() {
+        const options = ["BIG", "SMALL"];
+        const prediction = options[Math.floor(Math.random() * options.length)];
+        localStorage.setItem("lastPrediction", prediction);
+        localStorage.setItem("predictionTimestamp", Date.now());
+        document.getElementById('prediction').textContent = prediction;
+      }
+
+      function loadOrGeneratePrediction() {
+        const lastPrediction = localStorage.getItem("lastPrediction");
+        const lastTime = parseInt(localStorage.getItem("predictionTimestamp"), 10) || 0;
+        const nowTime = Date.now();
+        const elapsed = nowTime - lastTime;
+
+        if (lastPrediction && elapsed < 60000) {
+          document.getElementById('prediction').textContent = lastPrediction;
+        } else {
+          generateRandomPrediction();
+        }
+      }
+
+      updateClock();
+      loadOrGeneratePrediction();
+      setInterval(updateClock, 1000);
+      setInterval(generateRandomPrediction, 60000);
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if ((e.key === "F5") || (e.ctrlKey && e.key.toLowerCase() === "r")) {
+        e.preventDefault();
+      }
+    });
+
+    document.addEventListener("contextmenu", function (e) {
+      e.preventDefault();
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <script>
+    particlesJS("particles-js", {
+      particles: {
+        number: { value: 100 },
+        color: { value: ["#00ffea", "#ff00ff"] },
+        shape: { type: "circle" },
+        opacity: { value: 0.6, random: true },
+        size: { value: 3, random: true },
+        line_linked: {
+          enable: true,
+          distance: 150,
+          color: "#ffffff",
+          opacity: 0.4,
+          width: 1
+        },
+        move: {
+          enable: true,
+          speed: 2,
+          direction: "none",
+          out_mode: "out"
+        }
+      },
+      interactivity: {
+        events: {
+          onhover: { enable: true, mode: "repulse" },
+          onclick: { enable: true, mode: "push" }
+        },
+        modes: {
+          repulse: { distance: 100 },
+          push: { particles_nb: 4 }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
